@@ -161,7 +161,9 @@ if [ "$1" == "install" ]; then
     # Pull and install docker images
     # Indirect expansion
     for i in ${!LIST[*]}; do
+        # Pull Image
         getImage ${i} ${LIST[${i}]}
+        # Install bash script into LOCAL_BIN_PATH
         installCommand ${i} $(echo ${LIST[${i}]} | sed -e "s/local://g" | sed -e "s/external://g" | sed -e "s/dockerfiles\///g")
     done
 
@@ -172,7 +174,9 @@ if [ "$1" == "install" ]; then
 elif [ "$1" == "uninstall" ]; then
     # Remove commands
     for i in ${!LIST[*]}; do
+        # Delete symlink into LOCAL_BIN_PATH
         cleanUpSymlink ${i}
+        # Remove image from local repository
         cleanUpImage $(echo ${LIST[${i}]} | sed -e "s/local://g" | sed -e "s/external://g" | sed -e "s/dockerfiles\///g")
     done
     cleanUpDir
