@@ -61,11 +61,11 @@ installCommand() {
     echo -e "#!/usr/bin/env bash\ndocker run --rm --name ${COMMAND_NAME}-bin -u \`id -u\`:\`id -g\` -v \`pwd\`:/data -w /data ${IMAGE_NAME} ${COMMAND_NAME} \"\$@\"" > ${BIN_PATH}/${COMMAND_NAME}
     writeGreenOutput "Make it executable"
     ## Add execute permission for files
-    chmod +x ${BIN_PATH}/${COMMAND_NAME}
+    chmod +x ${BIN_PATH}/${COMMAND_NAME} || { writeRedOutput "File not found, I guess? (${BIN_PATH}/${COMMAND_NAME})" >&2; exit 1; }
     writeGreenOutput "Creating symlink into /usr/bin/. I'm gonna ask for the sudo password."
     ## Create symlinks into /usr/bin/ dir
-    sudo ln -sf ${BIN_PATH}/${COMMAND_NAME} /usr/bin/${IMAGE_NAME}${COMMAND_APPENDIX}
-    writeGreenOutput "Use ${COMMAND_NAME} with ${IMAGE_NAME}${COMMAND_APPENDIX}"
+    sudo ln -sf ${BIN_PATH}/${COMMAND_NAME} /usr/bin/${COMMAND_NAME}${COMMAND_APPENDIX} || { writeRedOutput "Command couldn't get installed (${COMMAND_NAME}${COMMAND_APPENDIX})" >&2; exit 1; }
+    writeGreenOutput "Use ${COMMAND_NAME} with ${COMMAND_NAME}${COMMAND_APPENDIX}"
 }
 
 getImage() {
@@ -83,7 +83,7 @@ remotePull() {
     IMAGE_NAME=${1}
     writeGreenOutput "Pulling ${IMAGE_NAME} image"
     ## Pull python docker image from docker hub
-    docker pull ${IMAGE_NAME}
+    docker pull ${IMAGE_NAME} || { writeRedOutput "Couldn't pull image ${IMAGE_NAME}" >&2; exit 1; }
 }
 
 localBuild() {
@@ -91,7 +91,7 @@ localBuild() {
     SOURCE=${2}
     # Change into dockerfiles subdir for current image
     cd ${CURRENT_DIR}"/"${SOURCE}
-    docker build -t ${IMAGE_NAME} .
+    docker build -t ${IMAGE_NAME} . || { writeRedOutput "Couldn't build image ${IMAGE_NAME}" >&2; exit 1; }
     # Change back into source directory
     cd ${CURRENT_DIR}
 }
@@ -99,7 +99,7 @@ localBuild() {
 testCommand() {
     COMMAND_NAME=${1}${COMMAND_APPENDIX}
     writeGreenOutput "Test command ${COMMAND_NAME} image"
-    ${COMMAND_NAME} --version
+    ${COMMAND_NAME} --version || { writeRedOutput "Command ${COMMAND_NAME} failed" >&2; exit 1; }
 }
 
 cleanUp() {
